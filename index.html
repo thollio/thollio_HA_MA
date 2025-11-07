@@ -6,32 +6,110 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- Leaflet (OpenStreetMap) -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- XLSX für Excel-Export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-  body { font-family: Arial, sans-serif; background-color: #f3f7f2; margin: 20px; color: #333; }
-  h1 { text-align: center; margin-bottom: 10px; }
-  form, .ergebnis { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto 30px auto; }
-  label { display: block; margin-top: 10px; }
-  input, select, button { padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
-  input, select { width: 100%; }
-  button { background-color: #2c7a3f; color: white; border: none; cursor: pointer; margin-top: 15px; }
-  button:hover { background-color: #256836; }
-  #map { height: 300px; width: 100%; margin-top: 10px; border-radius: 10px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-  th { background-color: #e6f0e9; }
-  .summe { font-weight: bold; background-color: #d8e9d8; }
-  .btn-export { background-color: #1d6fa5; }
-  .btn-export:hover { background-color: #15577f; }
-  #durchschnittAnzeige { margin-top: 5px; font-weight: bold; transition: color 0.3s ease; }
+  body {
+    font-family: "Segoe UI", sans-serif;
+    background-color: #1f2522;
+    color: #e0e3de;
+    margin: 20px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #d7f0d2;
+  }
+
+  form, .ergebnis {
+    background: #2a2f2c;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    max-width: 900px;
+    margin: 0 auto 30px auto;
+  }
+
+  label { display: block; margin-top: 10px; color: #c9d1c5; }
+
+  input, select, button {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    margin-top: 5px;
+    box-sizing: border-box;
+    background-color: #3b423e;
+    color: #f1f1f1;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: #66bb6a;
+    background-color: #454d49;
+  }
+
+  button {
+    background-color: #36643b;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #2d5333;
+  }
+
+  #map {
+    height: 300px;
+    width: 100%;
+    margin-top: 10px;
+    border-radius: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    background-color: #343b37;
+  }
+
+  th, td {
+    border: 1px solid #555;
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    background-color: #425046;
+    color: #e4efe1;
+  }
+
+  .summe {
+    font-weight: bold;
+    background-color: #506350;
+  }
+
+  .btn-export {
+    background-color: #245a7a;
+  }
+
+  .btn-export:hover {
+    background-color: #1d495f;
+  }
+
+  #durchschnittAnzeige {
+    margin-top: 8px;
+    font-weight: bold;
+    color: #a5d6a7;
+  }
 </style>
 </head>
 
@@ -76,7 +154,7 @@
     <input type="number" id="laenge" step="0.01" required>
   </label>
 
-  <h3>Standort auswählen (OpenStreetMap)</h3>
+  <h3>Standort (OpenStreetMap)</h3>
   <div id="map"></div>
   <input type="hidden" id="latitude">
   <input type="hidden" id="longitude">
@@ -125,11 +203,8 @@ let durchmesserListe = [];
 let map, marker;
 const dInput = document.getElementById("durchmesserEingabe");
 const avgAnzeige = document.getElementById("durchschnittAnzeige");
-
-// Lokale Speicher-Keys
 const KEYS = ["datum", "baumart", "polternummer", "hiebnummer", "losnummer", "laenge", "latitude", "longitude"];
 
-// Letzte Werte laden
 window.addEventListener("load", () => {
   KEYS.forEach(k => {
     const val = localStorage.getItem("thollio_" + k);
@@ -142,23 +217,38 @@ window.addEventListener("load", () => {
   initMap();
 });
 
-// 🗺️ Karte mit Marker & Popup
 function initMap() {
   const savedLat = parseFloat(localStorage.getItem("thollio_latitude"));
   const savedLon = parseFloat(localStorage.getItem("thollio_longitude"));
 
-  const lat = !isNaN(savedLat) ? savedLat : 51.1657;
-  const lon = !isNaN(savedLon) ? savedLon : 10.4515;
-  const zoomLevel = !isNaN(savedLat) ? 15 : 7;
+  const defaultLat = !isNaN(savedLat) ? savedLat : 51.1657;
+  const defaultLon = !isNaN(savedLon) ? savedLon : 10.4515;
+  const defaultZoom = !isNaN(savedLat) ? 15 : 7;
 
-  map = L.map('map').setView([lat, lon], zoomLevel);
+  map = L.map('map').setView([defaultLat, defaultLon], defaultZoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap-Mitwirkende'
   }).addTo(map);
 
-  marker = L.marker([lat, lon]).addTo(map);
-  marker.bindPopup(`📍 Standort: ${lat.toFixed(5)}, ${lon.toFixed(5)}`).openPopup();
+  marker = L.marker([defaultLat, defaultLon]).addTo(map);
+  marker.bindPopup(`📍 Standort: ${defaultLat.toFixed(5)}, ${defaultLon.toFixed(5)}`).openPopup();
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        map.setView([latitude, longitude], 16);
+        marker.setLatLng([latitude, longitude]);
+        marker.bindPopup(`📍 Aktueller Standort: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`).openPopup();
+        document.getElementById("latitude").value = latitude.toFixed(6);
+        document.getElementById("longitude").value = longitude.toFixed(6);
+        localStorage.setItem("thollio_latitude", latitude.toFixed(6));
+        localStorage.setItem("thollio_longitude", longitude.toFixed(6));
+      },
+      () => console.log("GPS verweigert oder nicht verfügbar.")
+    );
+  }
 
   map.on('click', function(e) {
     const { lat, lng } = e.latlng;
@@ -170,8 +260,8 @@ function initMap() {
     marker.bindPopup(`📍 Standort: ${lat.toFixed(5)}, ${lng.toFixed(5)}`).openPopup();
   });
 
-  document.getElementById("latitude").value = lat.toFixed(6);
-  document.getElementById("longitude").value = lon.toFixed(6);
+  document.getElementById("latitude").value = defaultLat.toFixed(6);
+  document.getElementById("longitude").value = defaultLon.toFixed(6);
 }
 
 dInput.addEventListener("keydown", function(e) {
@@ -192,9 +282,7 @@ function aktualisiereDurchschnitt() {
   if (!isNaN(avg)) {
     window.durchmesserDurchschnitt = avg;
     avgAnzeige.textContent = "Durchschnitt: " + avg.toFixed(1) + " cm";
-    avgAnzeige.style.color = "#2c7a3f";
-    setTimeout(()=>avgAnzeige.style.color="#333",300);
-    document.getElementById("durchmesserListe").textContent = 
+    document.getElementById("durchmesserListe").textContent =
       "Eingegebene Durchmesser: " + durchmesserListe.map(d=>d.toFixed(1)).join(", ");
   }
 }
@@ -210,7 +298,6 @@ function zeigeGesamtStueckzahl() {
 
 document.getElementById("holzForm").addEventListener("submit", function(e){
   e.preventDefault();
-
   const data = {};
   KEYS.forEach(k => {
     const el = document.getElementById(k);
@@ -238,6 +325,11 @@ document.getElementById("holzForm").addEventListener("submit", function(e){
 
 function exportXLSX() {
   const wb = XLSX.utils.book_new();
+
+  const lat = document.getElementById("latitude").value;
+  const lon = document.getElementById("longitude").value;
+  const mapsLink = `https://maps.google.com/?q=${lat},${lon}`;
+
   const ws_data = [
     ["Thollio Holzmantelerfassung"],
     ["Datum", document.getElementById("datum").value],
@@ -246,22 +338,34 @@ function exportXLSX() {
     ["Hiebnummer", document.getElementById("hiebnummer").value],
     ["Losnummer", document.getElementById("losnummer").value],
     ["Länge (m)", document.getElementById("laenge").value],
-    ["Latitude", document.getElementById("latitude").value],
-    ["Longitude", document.getElementById("longitude").value],
+    ["Latitude", lat],
+    ["Longitude", lon],
+    ["📍 Standort-Link", mapsLink],
     [],
     ["Durchschnitt (cm)", "Gesamtstückzahl", "Einzelvolumen (m³)", "Gesamtvolumen (m³)"]
   ];
-
   document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
     const cols = Array.from(tr.children).map(td => td.textContent);
     ws_data.push(cols);
   });
-
   ws_data.push(["", "", "Gesamtvolumen", document.getElementById("gesamtVolumen").textContent]);
+  const ws1 = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws1, "Erfassung");
 
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb, ws, "Erfassung");
-  XLSX.writeFile(wb, "thollio_holzmantelerfassung.xlsx");
+  const ws2_data = [["Nr.", "Durchmesser (cm)"]];
+  durchmesserListe.forEach((d, i) => ws2_data.push([i + 1, d.toFixed(1)]));
+  ws2_data.push([]);
+  ws2_data.push(["Anzahl", durchmesserListe.length]);
+  ws2_data.push(["Durchschnitt", window.durchmesserDurchschnitt.toFixed(1)]);
+  const ws2 = XLSX.utils.aoa_to_sheet(ws2_data);
+  XLSX.utils.book_append_sheet(wb, ws2, "Durchmesserliste");
+
+  const datum = document.getElementById("datum").value;
+  const hieb = document.getElementById("hiebnummer").value || "H";
+  const los = document.getElementById("losnummer").value || "L";
+  const polter = document.getElementById("polternummer").value || "P";
+  const filename = `thollio_${datum}_${hieb}_${los}_${polter}.xlsx`;
+  XLSX.writeFile(wb, filename);
 }
 </script>
 </body>
