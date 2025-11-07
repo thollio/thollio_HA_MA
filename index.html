@@ -19,6 +19,9 @@
   .summe { font-weight: bold; background-color: #d8e9d8; }
   .btn-export { background-color: #1d6fa5; }
   .btn-export:hover { background-color: #15577f; }
+  #eingabeContainer { margin-top: 20px; }
+  #durchmesserListe { margin-top: 10px; }
+  #durchschnittAnzeige { margin-top: 5px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -35,15 +38,13 @@
     <input type="number" id="laenge" step="0.01" required>
   </label>
 
-  <h3>Durchmesser eingeben</h3>
-  <div id="durchmesserEingaben">
-    <div class="eingabe">
-      <input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>
-    </div>
+  <div id="eingabeContainer">
+    <h3>Durchmesser eingeben (Enter nach jedem Wert)</h3>
+    <input type="number" id="durchmesserEingabe" placeholder="Durchmesser (cm)" step="0.1" required>
+    <div id="durchmesserListe"></div>
+    <div id="durchschnittAnzeige">Durchschnitt: -</div>
+    <button type="button" onclick="zeigeGesamtStueckzahl()">Gesamtstückzahl eingeben</button>
   </div>
-
-  <button type="button" onclick="neueZeile()">+ Weiteren Durchmesser</button>
-  <button type="button" onclick="zeigeGesamtStueckzahl()">Gesamtstückzahl eingeben</button>
 
   <div id="anzahlContainer" style="display:none; margin-top:20px;">
     <h3>Gesamtstückzahl eingeben</h3>
@@ -79,28 +80,42 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-function neueZeile() {
-  const container = document.getElementById("durchmesserEingaben");
-  const div = document.createElement("div");
-  div.classList.add("eingabe");
-  div.innerHTML = `<input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>`;
-  container.appendChild(div);
+let durchmesserListe = [];
+const durchmesserInput = document.getElementById("durchmesserEingabe");
+const durchschnittAnzeige = document.getElementById("durchschnittAnzeige");
+durchmesserInput.focus();
+
+// Enter speichert den Durchmesser, leert das Feld, berechnet Durchschnitt
+durchmesserInput.addEventListener("keydown", function(e) {
+  if(e.key === "Enter") {
+    e.preventDefault();
+    const wert = parseFloat(durchmesserInput.value);
+    if(!isNaN(wert)) {
+      durchmesserListe.push(wert);
+      aktualisiereAnzeige();
+      durchmesserInput.value = "";
+    }
+    durchmesserInput.focus();
+  }
+});
+
+function aktualisiereAnzeige() {
+  // Liste anzeigen
+  document.getElementById("durchmesserListe").innerHTML = "Eingegebene Durchmesser: " + durchmesserListe.map(d => d.toFixed(1)).join(", ");
+  // Durchschnitt berechnen
+  const sum = durchmesserListe.reduce((a,b) => a+b,0);
+  const avg = sum/durchmesserListe.length;
+  window.durchmesserDurchschnitt = parseFloat(avg.toFixed(1));
+  durchschnittAnzeige.textContent = "Durchschnitt: " + window.durchmesserDurchschnitt.toFixed(1);
 }
 
 function zeigeGesamtStueckzahl() {
-  const durchmesserFelder = document.querySelectorAll(".durchmesser");
-  let sum = 0, count = 0;
-  durchmesserFelder.forEach(feld => {
-    const d = parseFloat(feld.value);
-    if(!isNaN(d)) { sum += d; count++; }
-  });
-  if(count === 0) { alert("Bitte mindestens einen Durchmesser eingeben."); return; }
-
-  const durchschnitt = (sum / count).toFixed(1);
-  window.durchmesserDurchschnitt = parseFloat(durchschnitt); // global speichern
-
+  if(durchmesserListe.length === 0) {
+    alert("Bitte mindestens einen Durchmesser eingeben.");
+    return;
+  }
   document.getElementById("anzahlContainer").style.display = "block";
-  document.getElementById("anzahlContainer").scrollIntoView({behavior:"smooth"});
+  document.getElementById("gesamtAnzahl").focus();
 }
 
 document.getElementById("holzForm").addEventListener("submit", function(e) {
@@ -130,7 +145,7 @@ document.getElementById("holzForm").addEventListener("submit", function(e) {
   document.getElementById("ergebnis").style.display = "block";
 });
 
-// Exportfunktionen bleiben unverändert
+// Exportfunktionen
 function exportCSV() {
   const date = document.getElementById("datum").value;
   const revier = document.getElementById("revier").value;
@@ -185,3 +200,4 @@ async function exportPDF() {
 </script>
 </body>
 </html>
+
