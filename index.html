@@ -94,19 +94,11 @@
     background-color: #506350;
   }
 
-  .btn-export {
-    background-color: #245a7a;
-  }
-
+  .btn-export { background-color: #245a7a; }
   .btn-export:hover { background-color: #1d495f; }
 
-  .btn-reset {
-    background-color: #7a2424;
-  }
-
-  .btn-reset:hover {
-    background-color: #5f1d1d;
-  }
+  .btn-reset { background-color: #7a2424; }
+  .btn-reset:hover { background-color: #5f1d1d; }
 
   #durchschnittAnzeige {
     margin-top: 8px;
@@ -134,12 +126,23 @@
     </select>
   </label>
 
+  <label>Güteklasse:
+    <select id="gueteklasse" required>
+      <option value="">Bitte wählen...</option>
+      <option>A</option><option>B</option><option>C</option><option>D</option>
+      <option>BC</option><option>BK</option><option>CK</option>
+      <option>CD</option><option>N</option><option>NF</option><option>K</option>
+    </select>
+  </label>
+
   <label>Polternummer:
     <input type="text" id="polternummer" required>
   </label>
+
   <label>Hiebnummer:
     <input type="text" id="hiebnummer" required>
   </label>
+
   <label>Losnummer:
     <input type="text" id="losnummer" required>
   </label>
@@ -171,6 +174,8 @@
 
     <button type="submit">Berechnen</button>
   </div>
+
+  <button type="button" class="btn-reset" onclick="allesLoeschen()">Alles löschen</button>
 </form>
 
 <div class="ergebnis" id="ergebnis" style="display:none;">
@@ -194,7 +199,6 @@
   </table>
   <div style="text-align:center; margin-top:15px;">
     <button class="btn-export" onclick="exportXLSX()">Excel (.xlsx) exportieren</button>
-    <button class="btn-reset" onclick="allesLoeschen()">Alles löschen</button>
   </div>
 </div>
 
@@ -203,7 +207,7 @@ let durchmesserListe = [];
 let map, marker;
 const dInput = document.getElementById("durchmesserEingabe");
 const avgAnzeige = document.getElementById("durchschnittAnzeige");
-const KEYS = ["datum","baumart","polternummer","hiebnummer","losnummer","laenge","latitude","longitude","bemerkung"];
+const KEYS = ["datum","baumart","gueteklasse","polternummer","hiebnummer","losnummer","laenge","latitude","longitude","bemerkung"];
 
 window.addEventListener("load", () => {
   KEYS.forEach(k => {
@@ -214,24 +218,16 @@ window.addEventListener("load", () => {
     }
   });
   dInput.focus();
-  initMap();
+  initMap(); // immer aktuellen Standort holen
 });
 
 function initMap() {
-  const savedLat = parseFloat(localStorage.getItem("thollio_latitude"));
-  const savedLon = parseFloat(localStorage.getItem("thollio_longitude"));
-  const lat = !isNaN(savedLat) ? savedLat : 51.1657;
-  const lon = !isNaN(savedLon) ? savedLon : 10.4515;
-  const zoom = !isNaN(savedLat) ? 15 : 7;
-
-  map = L.map('map').setView([lat, lon], zoom);
+  map = L.map('map').setView([51.1657, 10.4515], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18, attribution: '&copy; OpenStreetMap-Mitwirkende'
   }).addTo(map);
 
-  marker = L.marker([lat, lon]).addTo(map);
-  marker.bindPopup(`<b>📍 Standort:</b><br>${lat.toFixed(5)}, ${lon.toFixed(5)}<br>
-  <a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
+  marker = L.marker([51.1657, 10.4515]).addTo(map);
 
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
@@ -239,8 +235,11 @@ function initMap() {
       map.setView([latitude, longitude], 16);
       marker.setLatLng([latitude, longitude]);
       marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
-      <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
+        <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
       setCoords(latitude, longitude);
+    }, () => {
+      marker.bindPopup(`<b>📍 Standard-Standort (Deutschland):</b><br>51.1657, 10.4515`).openPopup();
+      setCoords(51.1657, 10.4515);
     });
   }
 
@@ -251,9 +250,8 @@ function initMap() {
     marker.bindPopup(`<b>📍 Standort:</b><br>${lat.toFixed(5)}, ${lng.toFixed(5)}<br>
     <a href="https://maps.google.com/?q=${lat},${lng}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
   });
-
-  setCoords(lat, lon);
 }
+
 function setCoords(lat, lon){
   document.getElementById("latitude").value = lat.toFixed(6);
   document.getElementById("longitude").value = lon.toFixed(6);
@@ -269,6 +267,7 @@ dInput.addEventListener("keydown", e=>{
     dInput.focus();
   }
 });
+
 function aktualisiereDurchschnitt(){
   const avg = durchmesserListe.reduce((a,b)=>a+b,0)/durchmesserListe.length;
   if(!isNaN(avg)){
@@ -277,6 +276,7 @@ function aktualisiereDurchschnitt(){
     document.getElementById("durchmesserListe").textContent="Eingegebene Durchmesser: "+durchmesserListe.map(d=>d.toFixed(1)).join(", ");
   }
 }
+
 function zeigeGesamtStueckzahl(){
   if(durchmesserListe.length===0){alert("Bitte mindestens einen Durchmesser eingeben.");return;}
   document.getElementById("anzahlContainer").style.display="block";
@@ -299,6 +299,43 @@ document.getElementById("holzForm").addEventListener("submit", e=>{
   document.getElementById("ergebnis").style.display="block";
 });
 
+/* 🧹 Alles löschen */
+function allesLoeschen() {
+  if (confirm("Möchtest du wirklich alle Eingaben und gespeicherten Daten löschen?")) {
+    localStorage.clear();
+    durchmesserListe = [];
+    window.durchmesserDurchschnitt = undefined;
+
+    document.getElementById("holzForm").reset();
+    document.getElementById("durchmesserListe").textContent = "";
+    document.getElementById("durchschnittAnzeige").textContent = "Durchschnitt: -";
+    document.getElementById("ergebnis").style.display = "none";
+    document.getElementById("anzahlContainer").style.display = "none";
+    dInput.focus();
+
+    // Karte zurücksetzen und aktuellen Standort anzeigen
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const { latitude, longitude } = pos.coords;
+          map.setView([latitude, longitude], 16);
+          marker.setLatLng([latitude, longitude]);
+          marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
+            <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
+          setCoords(latitude, longitude);
+        },
+        () => {
+          map.setView([51.1657, 10.4515], 7);
+          marker.setLatLng([51.1657, 10.4515]);
+          marker.bindPopup(`<b>📍 Standard-Standort (Deutschland):</b><br>51.1657, 10.4515`).openPopup();
+          setCoords(51.1657, 10.4515);
+        }
+      );
+    }
+    alert("Alle Daten wurden gelöscht und die Karte wurde auf den aktuellen Standort zurückgesetzt.");
+  }
+}
+
 function exportXLSX(){
   const wb=XLSX.utils.book_new();
   const lat=document.getElementById("latitude").value;
@@ -309,6 +346,7 @@ function exportXLSX(){
     ["Thollio Holzmantelerfassung"],
     ["Datum",document.getElementById("datum").value],
     ["Baumart",document.getElementById("baumart").value],
+    ["Güteklasse",document.getElementById("gueteklasse").value],
     ["Polternummer",document.getElementById("polternummer").value],
     ["Hiebnummer",document.getElementById("hiebnummer").value],
     ["Losnummer",document.getElementById("losnummer").value],
@@ -329,7 +367,7 @@ function exportXLSX(){
   const ws2_data=[["Nr.","Durchmesser (cm)"]];
   durchmesserListe.forEach((d,i)=>ws2_data.push([i+1,d.toFixed(1)]));
   ws2_data.push([]);ws2_data.push(["Anzahl",durchmesserListe.length]);
-  ws2_data.push(["Durchschnitt",window.durchmesserDurchschnitt.toFixed(1)]);
+  ws2_data.push(["Durchschnitt",window.durchmesserDurchschnitt ? window.durchmesserDurchschnitt.toFixed(1) : "-"]);
   const ws2=XLSX.utils.aoa_to_sheet(ws2_data);
   XLSX.utils.book_append_sheet(wb,ws2,"Durchmesserliste");
 
@@ -338,22 +376,6 @@ function exportXLSX(){
   const los=document.getElementById("losnummer").value||"L";
   const polter=document.getElementById("polternummer").value||"P";
   XLSX.writeFile(wb,`thollio_${datum}_${hieb}_${los}_${polter}.xlsx`);
-}
-
-/* 🧹 NEUE FUNKTION: Alles löschen */
-function allesLoeschen(){
-  if(confirm("Möchtest du wirklich alle Eingaben und gespeicherten Daten löschen?")){
-    localStorage.clear();
-    durchmesserListe = [];
-    window.durchmesserDurchschnitt = undefined;
-    document.getElementById("holzForm").reset();
-    document.getElementById("durchmesserListe").textContent = "";
-    document.getElementById("durchschnittAnzeige").textContent = "Durchschnitt: -";
-    document.getElementById("ergebnis").style.display = "none";
-    document.getElementById("anzahlContainer").style.display = "none";
-    dInput.focus();
-    alert("Alle Daten wurden gelöscht.");
-  }
 }
 </script>
 </body>
