@@ -2,53 +2,96 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Mantelholzerfassung</title>
+<title>Thollio Holzmantelerfassung</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Leaflet (OpenStreetMap) -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- XLSX für Excel-Export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
   body { font-family: Arial, sans-serif; background-color: #f3f7f2; margin: 20px; color: #333; }
   h1 { text-align: center; margin-bottom: 10px; }
-  form, .ergebnis { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto 30px auto; }
+  form, .ergebnis { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto 30px auto; }
   label { display: block; margin-top: 10px; }
-  input, button { padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
-  input { width: 100%; }
+  input, select, button { padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
+  input, select { width: 100%; }
   button { background-color: #2c7a3f; color: white; border: none; cursor: pointer; margin-top: 15px; }
   button:hover { background-color: #256836; }
+  #map { height: 300px; width: 100%; margin-top: 10px; border-radius: 10px; }
   table { width: 100%; border-collapse: collapse; margin-top: 15px; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
   th { background-color: #e6f0e9; }
   .summe { font-weight: bold; background-color: #d8e9d8; }
   .btn-export { background-color: #1d6fa5; }
   .btn-export:hover { background-color: #15577f; }
-  #eingabeContainer { margin-top: 20px; }
-  #durchmesserListe { margin-top: 10px; }
-  #durchschnittAnzeige { margin-top: 5px; font-weight: bold; }
+  #durchschnittAnzeige { margin-top: 5px; font-weight: bold; transition: color 0.3s ease; }
 </style>
 </head>
+
 <body>
-<h1>Mantelholzerfassung</h1>
+<h1>Thollio Holzmantelerfassung</h1>
 
 <form id="holzForm">
   <label>Datum:
     <input type="date" id="datum" required>
   </label>
-  <label>Revier / Standort:
-    <input type="text" id="revier" placeholder="z. B. Revier Nord" required>
+
+  <label>Baumart:
+    <select id="baumart" required>
+      <option value="">Bitte wählen...</option>
+      <option>Fichte</option>
+      <option>Weißtanne</option>
+      <option>Douglasie</option>
+      <option>Lärche</option>
+      <option>Kiefer</option>
+      <option>SNH</option>
+      <option>SLB</option>
+      <option>Eiche</option>
+      <option>Buche</option>
+      <option>Ahorn</option>
+      <option>Esche</option>
+      <option>Kirsche</option>
+      <option>Erle</option>
+    </select>
   </label>
+
+  <label>Polternummer:
+    <input type="text" id="polternummer" required>
+  </label>
+  <label>Hiebnummer:
+    <input type="text" id="hiebnummer" required>
+  </label>
+  <label>Losnummer:
+    <input type="text" id="losnummer" required>
+  </label>
+
   <label>Länge (m):
     <input type="number" id="laenge" step="0.01" required>
   </label>
 
-  <div id="eingabeContainer">
-    <h3>Durchmesser eingeben (Enter nach jedem Wert)</h3>
-    <input type="number" id="durchmesserEingabe" placeholder="Durchmesser (cm)" step="0.1" required>
-    <div id="durchmesserListe"></div>
-    <div id="durchschnittAnzeige">Durchschnitt: -</div>
-    <button type="button" onclick="zeigeGesamtStueckzahl()">Gesamtstückzahl eingeben</button>
-  </div>
+  <h3>Standort auswählen (OpenStreetMap)</h3>
+  <div id="map"></div>
+  <input type="hidden" id="latitude">
+  <input type="hidden" id="longitude">
+
+  <h3>Durchmesser eingeben (Enter nach jedem Wert)</h3>
+  <input type="number" id="durchmesserEingabe" placeholder="Durchmesser (cm)" step="0.1" required>
+  <div id="durchmesserListe"></div>
+  <div id="durchschnittAnzeige">Durchschnitt: -</div>
+
+  <button type="button" onclick="zeigeGesamtStueckzahl()">Gesamtstückzahl eingeben</button>
 
   <div id="anzahlContainer" style="display:none; margin-top:20px;">
-    <h3>Gesamtstückzahl eingeben</h3>
-    <label>Gesamtstückzahl: <input type="number" id="gesamtAnzahl" min="1" required></label>
+    <label>Gesamtstückzahl:
+      <input type="number" id="gesamtAnzahl" min="1" required>
+    </label>
     <button type="submit">Berechnen</button>
   </div>
 </form>
@@ -58,7 +101,7 @@
   <table id="ergebnisTabelle">
     <thead>
       <tr>
-        <th>Durchschnittlicher Durchmesser (cm)</th>
+        <th>Durchschnitt (cm)</th>
         <th>Gesamtstückzahl</th>
         <th>Einzelvolumen (m³)</th>
         <th>Gesamtvolumen (m³)</th>
@@ -73,44 +116,91 @@
     </tfoot>
   </table>
   <div style="text-align:center; margin-top:15px;">
-    <button class="btn-export" onclick="exportCSV()">Excel (CSV) exportieren</button>
-    <button class="btn-export" onclick="exportPDF()">PDF exportieren</button>
+    <button class="btn-export" onclick="exportXLSX()">Excel (.xlsx) exportieren</button>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let durchmesserListe = [];
-const durchmesserInput = document.getElementById("durchmesserEingabe");
-const durchschnittAnzeige = document.getElementById("durchschnittAnzeige");
-durchmesserInput.focus();
+let map, marker;
+const dInput = document.getElementById("durchmesserEingabe");
+const avgAnzeige = document.getElementById("durchschnittAnzeige");
 
-// Enter speichert den Durchmesser, leert das Feld, berechnet Durchschnitt
-durchmesserInput.addEventListener("keydown", function(e) {
-  if(e.key === "Enter") {
-    e.preventDefault();
-    const wert = parseFloat(durchmesserInput.value);
-    if(!isNaN(wert)) {
-      durchmesserListe.push(wert);
-      aktualisiereAnzeige();
-      durchmesserInput.value = "";
+// Lokale Speicher-Keys
+const KEYS = ["datum", "baumart", "polternummer", "hiebnummer", "losnummer", "laenge", "latitude", "longitude"];
+
+// Letzte Werte laden
+window.addEventListener("load", () => {
+  KEYS.forEach(k => {
+    const val = localStorage.getItem("thollio_" + k);
+    if (val) {
+      const el = document.getElementById(k);
+      if (el) el.value = val;
     }
-    durchmesserInput.focus();
+  });
+  dInput.focus();
+  initMap();
+});
+
+// 🗺️ Karte mit Marker & Popup
+function initMap() {
+  const savedLat = parseFloat(localStorage.getItem("thollio_latitude"));
+  const savedLon = parseFloat(localStorage.getItem("thollio_longitude"));
+
+  const lat = !isNaN(savedLat) ? savedLat : 51.1657;
+  const lon = !isNaN(savedLon) ? savedLon : 10.4515;
+  const zoomLevel = !isNaN(savedLat) ? 15 : 7;
+
+  map = L.map('map').setView([lat, lon], zoomLevel);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap-Mitwirkende'
+  }).addTo(map);
+
+  marker = L.marker([lat, lon]).addTo(map);
+  marker.bindPopup(`📍 Standort: ${lat.toFixed(5)}, ${lon.toFixed(5)}`).openPopup();
+
+  map.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+    document.getElementById("latitude").value = lat.toFixed(6);
+    document.getElementById("longitude").value = lng.toFixed(6);
+    localStorage.setItem("thollio_latitude", lat.toFixed(6));
+    localStorage.setItem("thollio_longitude", lng.toFixed(6));
+    marker.setLatLng([lat, lng]);
+    marker.bindPopup(`📍 Standort: ${lat.toFixed(5)}, ${lng.toFixed(5)}`).openPopup();
+  });
+
+  document.getElementById("latitude").value = lat.toFixed(6);
+  document.getElementById("longitude").value = lon.toFixed(6);
+}
+
+dInput.addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const val = parseFloat(dInput.value);
+    if (!isNaN(val)) {
+      durchmesserListe.push(val);
+      aktualisiereDurchschnitt();
+      dInput.value = "";
+    }
+    dInput.focus();
   }
 });
 
-function aktualisiereAnzeige() {
-  // Liste anzeigen
-  document.getElementById("durchmesserListe").innerHTML = "Eingegebene Durchmesser: " + durchmesserListe.map(d => d.toFixed(1)).join(", ");
-  // Durchschnitt berechnen
-  const sum = durchmesserListe.reduce((a,b) => a+b,0);
-  const avg = sum/durchmesserListe.length;
-  window.durchmesserDurchschnitt = parseFloat(avg.toFixed(1));
-  durchschnittAnzeige.textContent = "Durchschnitt: " + window.durchmesserDurchschnitt.toFixed(1);
+function aktualisiereDurchschnitt() {
+  const avg = durchmesserListe.reduce((a,b)=>a+b,0)/durchmesserListe.length;
+  if (!isNaN(avg)) {
+    window.durchmesserDurchschnitt = avg;
+    avgAnzeige.textContent = "Durchschnitt: " + avg.toFixed(1) + " cm";
+    avgAnzeige.style.color = "#2c7a3f";
+    setTimeout(()=>avgAnzeige.style.color="#333",300);
+    document.getElementById("durchmesserListe").textContent = 
+      "Eingegebene Durchmesser: " + durchmesserListe.map(d=>d.toFixed(1)).join(", ");
+  }
 }
 
 function zeigeGesamtStueckzahl() {
-  if(durchmesserListe.length === 0) {
+  if (durchmesserListe.length === 0) {
     alert("Bitte mindestens einen Durchmesser eingeben.");
     return;
   }
@@ -118,25 +208,26 @@ function zeigeGesamtStueckzahl() {
   document.getElementById("gesamtAnzahl").focus();
 }
 
-document.getElementById("holzForm").addEventListener("submit", function(e) {
+document.getElementById("holzForm").addEventListener("submit", function(e){
   e.preventDefault();
-  const laenge = parseFloat(document.getElementById("laenge").value);
-  const datum = document.getElementById("datum").value;
-  const revier = document.getElementById("revier").value;
-  const gesamtAnzahl = parseInt(document.getElementById("gesamtAnzahl").value);
 
-  if(isNaN(window.durchmesserDurchschnitt) || isNaN(gesamtAnzahl) || isNaN(laenge)) {
-    alert("Bitte alle Werte korrekt eingeben.");
-    return;
-  }
+  const data = {};
+  KEYS.forEach(k => {
+    const el = document.getElementById(k);
+    data[k] = el ? el.value : "";
+    localStorage.setItem("thollio_" + k, data[k]);
+  });
 
-  const einzelVol = Math.PI * Math.pow(window.durchmesserDurchschnitt/200, 2) * laenge;
-  const gesVol = einzelVol * gesamtAnzahl;
+  const laenge = parseFloat(data.laenge);
+  const n = parseInt(document.getElementById("gesamtAnzahl").value);
+  const d = window.durchmesserDurchschnitt;
+  const einzelVol = Math.PI * Math.pow(d/200, 2) * laenge;
+  const gesVol = einzelVol * n;
 
   const tbody = document.querySelector("#ergebnisTabelle tbody");
   tbody.innerHTML = `<tr>
-    <td>${window.durchmesserDurchschnitt.toFixed(1)}</td>
-    <td>${gesamtAnzahl}</td>
+    <td>${d.toFixed(1)}</td>
+    <td>${n}</td>
     <td>${einzelVol.toFixed(3)}</td>
     <td>${gesVol.toFixed(3)}</td>
   </tr>`;
@@ -145,59 +236,35 @@ document.getElementById("holzForm").addEventListener("submit", function(e) {
   document.getElementById("ergebnis").style.display = "block";
 });
 
-// Exportfunktionen
-function exportCSV() {
-  const date = document.getElementById("datum").value;
-  const revier = document.getElementById("revier").value;
-  const laenge = document.getElementById("laenge").value;
-  const rows = [
-    [`Datum: ${date}`, `Revier: ${revier}`, `Länge: ${laenge} m`],
+function exportXLSX() {
+  const wb = XLSX.utils.book_new();
+  const ws_data = [
+    ["Thollio Holzmantelerfassung"],
+    ["Datum", document.getElementById("datum").value],
+    ["Baumart", document.getElementById("baumart").value],
+    ["Polternummer", document.getElementById("polternummer").value],
+    ["Hiebnummer", document.getElementById("hiebnummer").value],
+    ["Losnummer", document.getElementById("losnummer").value],
+    ["Länge (m)", document.getElementById("laenge").value],
+    ["Latitude", document.getElementById("latitude").value],
+    ["Longitude", document.getElementById("longitude").value],
     [],
-    ["Durchschnittlicher Durchmesser (cm)", "Gesamtstückzahl", "Einzelvolumen (m³)", "Gesamtvolumen (m³)"]
+    ["Durchschnitt (cm)", "Gesamtstückzahl", "Einzelvolumen (m³)", "Gesamtvolumen (m³)"]
   ];
-  document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
-    const cols = Array.from(tr.children).map(td => td.textContent);
-    rows.push(cols);
-  });
-  rows.push(["", "", "Gesamt", document.getElementById("gesamtVolumen").textContent]);
-  const csv = rows.map(r => r.join(";")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `mantelholz_${date}.csv`;
-  link.click();
-}
-
-async function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const date = document.getElementById("datum").value;
-  const revier = document.getElementById("revier").value;
-  const laenge = document.getElementById("laenge").value;
-
-  doc.setFontSize(14);
-  doc.text("Mantelholzerfassung", 14, 15);
-  doc.setFontSize(10);
-  doc.text(`Datum: ${date}`, 14, 22);
-  doc.text(`Revier: ${revier}`, 14, 28);
-  doc.text(`Länge: ${laenge} m`, 14, 34);
-
-  let y = 45;
-  doc.text("Durchschnittlicher Durchmesser (cm)   Stückzahl   Einzelvolumen (m³)   Gesamtvolumen (m³)", 14, y);
-  y += 6;
 
   document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
     const cols = Array.from(tr.children).map(td => td.textContent);
-    doc.text(cols.join("        "), 14, y);
-    y += 6;
+    ws_data.push(cols);
   });
 
-  y += 6;
-  doc.text(`Gesamtvolumen: ${document.getElementById("gesamtVolumen").textContent} m³`, 14, y);
+  ws_data.push(["", "", "Gesamtvolumen", document.getElementById("gesamtVolumen").textContent]);
 
-  doc.save(`mantelholz_${date}.pdf`);
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, "Erfassung");
+  XLSX.writeFile(wb, "thollio_holzmantelerfassung.xlsx");
 }
 </script>
 </body>
 </html>
+
 
