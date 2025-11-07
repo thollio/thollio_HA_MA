@@ -1,255 +1,187 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Mantelholzerfassung</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f3f7f2;
-      margin: 20px;
-      color: #333;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    form, .ergebnis {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      max-width: 800px;
-      margin: 0 auto 30px auto;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, button {
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      margin-top: 5px;
-      box-sizing: border-box;
-    }
-    input {
-      width: 100%;
-    }
-    button {
-      background-color: #2c7a3f;
-      color: white;
-      border: none;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-    button:hover {
-      background-color: #256836;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #e6f0e9;
-    }
-    .summe {
-      font-weight: bold;
-      background-color: #d8e9d8;
-    }
-    .btn-export {
-      background-color: #1d6fa5;
-    }
-    .btn-export:hover {
-      background-color: #15577f;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Mantelholzerfassung</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial, sans-serif; background-color: #f3f7f2; margin: 20px; color: #333; }
+  h1 { text-align: center; margin-bottom: 10px; }
+  form, .ergebnis { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto 30px auto; }
+  label { display: block; margin-top: 10px; }
+  input, button { padding: 8px; border-radius: 5px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
+  input { width: 100%; }
+  button { background-color: #2c7a3f; color: white; border: none; cursor: pointer; margin-top: 15px; }
+  button:hover { background-color: #256836; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  th { background-color: #e6f0e9; }
+  .summe { font-weight: bold; background-color: #d8e9d8; }
+  .btn-export { background-color: #1d6fa5; }
+  .btn-export:hover { background-color: #15577f; }
+</style>
 </head>
 <body>
-  <h1>Mantelholzerfassung</h1>
+<h1>Mantelholzerfassung</h1>
 
-  <form id="holzForm">
-    <label>Datum:
-      <input type="date" id="datum" required>
-    </label>
-    <label>Revier / Standort:
-      <input type="text" id="revier" placeholder="z. B. Revier Nord" required>
-    </label>
-    <label>Länge (m):
-      <input type="number" id="laenge" step="0.01" required>
-    </label>
+<form id="holzForm">
+  <label>Datum:
+    <input type="date" id="datum" required>
+  </label>
+  <label>Revier / Standort:
+    <input type="text" id="revier" placeholder="z. B. Revier Nord" required>
+  </label>
+  <label>Länge (m):
+    <input type="number" id="laenge" step="0.01" required>
+  </label>
 
-    <h3>Durchmesser & Stückzahl eingeben</h3>
-    <div id="durchmesserEingaben">
-      <div class="eingabe">
-        <input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>
-        <input type="number" placeholder="Stückzahl" class="anzahl" min="1" required>
-      </div>
-    </div>
-
-    <button type="button" onclick="neueZeile()">+ Weitere Durchmesser</button>
-    <button type="submit">Berechnen</button>
-  </form>
-
-  <div class="ergebnis" id="ergebnis" style="display:none;">
-    <h3>Ergebnis</h3>
-    <table id="ergebnisTabelle">
-      <thead>
-        <tr>
-          <th>Durchmesser (cm)</th>
-          <th>Stückzahl</th>
-          <th>Einzelvolumen (m³)</th>
-          <th>Gesamtvolumen (m³)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-      <tfoot>
-        <tr class="summe">
-          <td colspan="3">Gesamtvolumen</td>
-          <td id="gesamtVolumen">0.000</td>
-        </tr>
-      </tfoot>
-    </table>
-
-    <div style="text-align:center; margin-top:15px;">
-      <button class="btn-export" onclick="exportCSV()">Excel (CSV) exportieren</button>
-      <button class="btn-export" onclick="exportPDF()">PDF exportieren</button>
+  <h3>Durchmesser eingeben</h3>
+  <div id="durchmesserEingaben">
+    <div class="eingabe">
+      <input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <button type="button" onclick="neueZeile()">+ Weiteren Durchmesser</button>
+  <button type="button" onclick="zeigeGesamtStueckzahl()">Gesamtstückzahl eingeben</button>
 
-  <script>
-    const L_KEY = "mantelholz_letzte_laenge";
-    const D_KEY = "mantelholz_letztes_datum";
-    const R_KEY = "mantelholz_letztes_revier";
+  <div id="anzahlContainer" style="display:none; margin-top:20px;">
+    <h3>Gesamtstückzahl eingeben</h3>
+    <label>Gesamtstückzahl: <input type="number" id="gesamtAnzahl" min="1" required></label>
+    <button type="submit">Berechnen</button>
+  </div>
+</form>
 
-    const laengeInput = document.getElementById("laenge");
-    const datumInput = document.getElementById("datum");
-    const revierInput = document.getElementById("revier");
+<div class="ergebnis" id="ergebnis" style="display:none;">
+  <h3>Ergebnis</h3>
+  <table id="ergebnisTabelle">
+    <thead>
+      <tr>
+        <th>Durchschnittlicher Durchmesser (cm)</th>
+        <th>Gesamtstückzahl</th>
+        <th>Einzelvolumen (m³)</th>
+        <th>Gesamtvolumen (m³)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+      <tr class="summe">
+        <td colspan="3">Gesamtvolumen</td>
+        <td id="gesamtVolumen">0.000</td>
+      </tr>
+    </tfoot>
+  </table>
+  <div style="text-align:center; margin-top:15px;">
+    <button class="btn-export" onclick="exportCSV()">Excel (CSV) exportieren</button>
+    <button class="btn-export" onclick="exportPDF()">PDF exportieren</button>
+  </div>
+</div>
 
-    // Letzte Eingaben wiederherstellen
-    window.addEventListener("load", () => {
-      const l = localStorage.getItem(L_KEY);
-      const d = localStorage.getItem(D_KEY);
-      const r = localStorage.getItem(R_KEY);
-      if (l) laengeInput.value = l;
-      if (d) datumInput.value = d;
-      if (r) revierInput.value = r;
-      else datumInput.valueAsDate = new Date();
-    });
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+function neueZeile() {
+  const container = document.getElementById("durchmesserEingaben");
+  const div = document.createElement("div");
+  div.classList.add("eingabe");
+  div.innerHTML = `<input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>`;
+  container.appendChild(div);
+}
 
-    function neueZeile() {
-      const container = document.getElementById("durchmesserEingaben");
-      const div = document.createElement("div");
-      div.classList.add("eingabe");
-      div.innerHTML = `
-        <input type="number" placeholder="Durchmesser (cm)" class="durchmesser" step="0.1" required>
-        <input type="number" placeholder="Stückzahl" class="anzahl" min="1" required>
-      `;
-      container.appendChild(div);
-    }
+function zeigeGesamtStueckzahl() {
+  const durchmesserFelder = document.querySelectorAll(".durchmesser");
+  let sum = 0, count = 0;
+  durchmesserFelder.forEach(feld => {
+    const d = parseFloat(feld.value);
+    if(!isNaN(d)) { sum += d; count++; }
+  });
+  if(count === 0) { alert("Bitte mindestens einen Durchmesser eingeben."); return; }
 
-    document.getElementById("holzForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const laenge = parseFloat(laengeInput.value);
-      const datum = datumInput.value;
-      const revier = revierInput.value;
+  const durchschnitt = (sum / count).toFixed(1);
+  window.durchmesserDurchschnitt = parseFloat(durchschnitt); // global speichern
 
-      localStorage.setItem(L_KEY, laenge);
-      localStorage.setItem(D_KEY, datum);
-      localStorage.setItem(R_KEY, revier);
+  document.getElementById("anzahlContainer").style.display = "block";
+  document.getElementById("anzahlContainer").scrollIntoView({behavior:"smooth"});
+}
 
-      const durchmesserFelder = document.querySelectorAll(".durchmesser");
-      const anzahlFelder = document.querySelectorAll(".anzahl");
-      const tbody = document.querySelector("#ergebnisTabelle tbody");
-      tbody.innerHTML = "";
-      let gesamtVolumen = 0;
+document.getElementById("holzForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const laenge = parseFloat(document.getElementById("laenge").value);
+  const datum = document.getElementById("datum").value;
+  const revier = document.getElementById("revier").value;
+  const gesamtAnzahl = parseInt(document.getElementById("gesamtAnzahl").value);
 
-      for (let i = 0; i < durchmesserFelder.length; i++) {
-        const d = parseFloat(durchmesserFelder[i].value);
-        const n = parseInt(anzahlFelder[i].value);
-        if (!isNaN(d) && !isNaN(n) && !isNaN(laenge)) {
-          const einzelVol = Math.PI * Math.pow(d / 200, 2) * laenge;
-          const gesVol = einzelVol * n;
-          gesamtVolumen += gesVol;
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${d.toFixed(1)}</td>
-            <td>${n}</td>
-            <td>${einzelVol.toFixed(3)}</td>
-            <td>${gesVol.toFixed(3)}</td>
-          `;
-          tbody.appendChild(tr);
-        }
-      }
+  if(isNaN(window.durchmesserDurchschnitt) || isNaN(gesamtAnzahl) || isNaN(laenge)) {
+    alert("Bitte alle Werte korrekt eingeben.");
+    return;
+  }
 
-      document.getElementById("gesamtVolumen").textContent = gesamtVolumen.toFixed(3);
-      document.getElementById("ergebnis").style.display = "block";
-    });
+  const einzelVol = Math.PI * Math.pow(window.durchmesserDurchschnitt/200, 2) * laenge;
+  const gesVol = einzelVol * gesamtAnzahl;
 
-    function exportCSV() {
-      const date = document.getElementById("datum").value;
-      const revier = document.getElementById("revier").value;
-      const laenge = document.getElementById("laenge").value;
+  const tbody = document.querySelector("#ergebnisTabelle tbody");
+  tbody.innerHTML = `<tr>
+    <td>${window.durchmesserDurchschnitt.toFixed(1)}</td>
+    <td>${gesamtAnzahl}</td>
+    <td>${einzelVol.toFixed(3)}</td>
+    <td>${gesVol.toFixed(3)}</td>
+  </tr>`;
 
-      const rows = [
-        [`Datum: ${date}`, `Revier: ${revier}`, `Länge: ${laenge} m`],
-        [],
-        ["Durchmesser (cm)", "Stückzahl", "Einzelvolumen (m³)", "Gesamtvolumen (m³)"]
-      ];
+  document.getElementById("gesamtVolumen").textContent = gesVol.toFixed(3);
+  document.getElementById("ergebnis").style.display = "block";
+});
 
-      document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
-        const cols = Array.from(tr.children).map(td => td.textContent);
-        rows.push(cols);
-      });
+// Exportfunktionen bleiben unverändert
+function exportCSV() {
+  const date = document.getElementById("datum").value;
+  const revier = document.getElementById("revier").value;
+  const laenge = document.getElementById("laenge").value;
+  const rows = [
+    [`Datum: ${date}`, `Revier: ${revier}`, `Länge: ${laenge} m`],
+    [],
+    ["Durchschnittlicher Durchmesser (cm)", "Gesamtstückzahl", "Einzelvolumen (m³)", "Gesamtvolumen (m³)"]
+  ];
+  document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
+    const cols = Array.from(tr.children).map(td => td.textContent);
+    rows.push(cols);
+  });
+  rows.push(["", "", "Gesamt", document.getElementById("gesamtVolumen").textContent]);
+  const csv = rows.map(r => r.join(";")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `mantelholz_${date}.csv`;
+  link.click();
+}
 
-      rows.push(["", "", "Gesamt", document.getElementById("gesamtVolumen").textContent]);
+async function exportPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const date = document.getElementById("datum").value;
+  const revier = document.getElementById("revier").value;
+  const laenge = document.getElementById("laenge").value;
 
-      const csv = rows.map(r => r.join(";")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `mantelholz_${date}.csv`;
-      link.click();
-    }
+  doc.setFontSize(14);
+  doc.text("Mantelholzerfassung", 14, 15);
+  doc.setFontSize(10);
+  doc.text(`Datum: ${date}`, 14, 22);
+  doc.text(`Revier: ${revier}`, 14, 28);
+  doc.text(`Länge: ${laenge} m`, 14, 34);
 
-    async function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const date = document.getElementById("datum").value;
-      const revier = document.getElementById("revier").value;
-      const laenge = document.getElementById("laenge").value;
+  let y = 45;
+  doc.text("Durchschnittlicher Durchmesser (cm)   Stückzahl   Einzelvolumen (m³)   Gesamtvolumen (m³)", 14, y);
+  y += 6;
 
-      doc.setFontSize(14);
-      doc.text("Mantelholzerfassung", 14, 15);
-      doc.setFontSize(10);
-      doc.text(`Datum: ${date}`, 14, 22);
-      doc.text(`Revier: ${revier}`, 14, 28);
-      doc.text(`Länge: ${laenge} m`, 14, 34);
+  document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
+    const cols = Array.from(tr.children).map(td => td.textContent);
+    doc.text(cols.join("        "), 14, y);
+    y += 6;
+  });
 
-      let y = 45;
-      doc.text("Durchmesser (cm)   Stückzahl   Einzelvolumen (m³)   Gesamtvolumen (m³)", 14, y);
-      y += 6;
+  y += 6;
+  doc.text(`Gesamtvolumen: ${document.getElementById("gesamtVolumen").textContent} m³`, 14, y);
 
-      document.querySelectorAll("#ergebnisTabelle tbody tr").forEach(tr => {
-        const cols = Array.from(tr.children).map(td => td.textContent);
-        doc.text(cols.join("        "), 14, y);
-        y += 6;
-      });
-
-      y += 6;
-      doc.text(`Gesamtvolumen: ${document.getElementById("gesamtVolumen").textContent} m³`, 14, y);
-
-      doc.save(`mantelholz_${date}.pdf`);
-    }
-  </script>
+  doc.save(`mantelholz_${date}.pdf`);
+}
+</script>
 </body>
 </html>
