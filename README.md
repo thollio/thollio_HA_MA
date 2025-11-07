@@ -1,6 +1,6 @@
 # 🌲 thollio_HA
 
-**Offlinefähige Holzerfassungs-App**  
+**Holzerfassungs-App**  
 Erstellt von **thollio**, optimiert für Smartphone und GitHub Pages.
 
 ## Features
