@@ -100,6 +100,14 @@
 
   .btn-export:hover { background-color: #1d495f; }
 
+  .btn-reset {
+    background-color: #7a2424;
+  }
+
+  .btn-reset:hover {
+    background-color: #5f1d1d;
+  }
+
   #durchschnittAnzeige {
     margin-top: 8px;
     font-weight: bold;
@@ -186,6 +194,7 @@
   </table>
   <div style="text-align:center; margin-top:15px;">
     <button class="btn-export" onclick="exportXLSX()">Excel (.xlsx) exportieren</button>
+    <button class="btn-reset" onclick="allesLoeschen()">Alles löschen</button>
   </div>
 </div>
 
@@ -330,12 +339,22 @@ function exportXLSX(){
   const polter=document.getElementById("polternummer").value||"P";
   XLSX.writeFile(wb,`thollio_${datum}_${hieb}_${los}_${polter}.xlsx`);
 }
+
+/* 🧹 NEUE FUNKTION: Alles löschen */
+function allesLoeschen(){
+  if(confirm("Möchtest du wirklich alle Eingaben und gespeicherten Daten löschen?")){
+    localStorage.clear();
+    durchmesserListe = [];
+    window.durchmesserDurchschnitt = undefined;
+    document.getElementById("holzForm").reset();
+    document.getElementById("durchmesserListe").textContent = "";
+    document.getElementById("durchschnittAnzeige").textContent = "Durchschnitt: -";
+    document.getElementById("ergebnis").style.display = "none";
+    document.getElementById("anzahlContainer").style.display = "none";
+    dInput.focus();
+    alert("Alle Daten wurden gelöscht.");
+  }
+}
 </script>
 </body>
 </html>
-
-
-
-
-
-
