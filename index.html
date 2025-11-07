@@ -67,6 +67,13 @@
 
   button:hover { background-color: #2d5333; }
 
+  .btn-delete {
+    background-color: #8b2d2d;
+  }
+  .btn-delete:hover {
+    background-color: #732424;
+  }
+
   #map {
     height: 300px;
     width: 100%;
@@ -104,6 +111,15 @@
     margin-top: 8px;
     font-weight: bold;
     color: #a5d6a7;
+  }
+
+  .bemerkung-anzeige {
+    margin-top: 20px;
+    font-style: italic;
+    color: #b0c8ad;
+    background-color: #39453d;
+    padding: 10px;
+    border-radius: 8px;
   }
 </style>
 </head>
@@ -162,6 +178,7 @@
     </label>
 
     <button type="submit">Berechnen</button>
+    <button type="button" class="btn-delete" onclick="allesLoeschen()">Alles löschen</button>
   </div>
 </form>
 
@@ -184,6 +201,7 @@
       </tr>
     </tfoot>
   </table>
+  <div id="bemerkungAnzeige" class="bemerkung-anzeige"></div>
   <div style="text-align:center; margin-top:15px;">
     <button class="btn-export" onclick="exportXLSX()">Excel (.xlsx) exportieren</button>
   </div>
@@ -223,17 +241,6 @@ function initMap() {
   marker = L.marker([lat, lon]).addTo(map);
   marker.bindPopup(`<b>📍 Standort:</b><br>${lat.toFixed(5)}, ${lon.toFixed(5)}<br>
   <a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
-
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 16);
-      marker.setLatLng([latitude, longitude]);
-      marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
-      <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
-      setCoords(latitude, longitude);
-    });
-  }
 
   map.on('click', e => {
     const { lat, lng } = e.latlng;
@@ -287,6 +294,7 @@ document.getElementById("holzForm").addEventListener("submit", e=>{
   const tbody=document.querySelector("#ergebnisTabelle tbody");
   tbody.innerHTML=`<tr><td>${d.toFixed(1)}</td><td>${n}</td><td>${einzelVol.toFixed(3)}</td><td>${gesVol.toFixed(3)}</td></tr>`;
   document.getElementById("gesamtVolumen").textContent=gesVol.toFixed(3);
+  document.getElementById("bemerkungAnzeige").textContent = "Bemerkung: " + (data.bemerkung || "—");
   document.getElementById("ergebnis").style.display="block";
 });
 
@@ -330,8 +338,23 @@ function exportXLSX(){
   const polter=document.getElementById("polternummer").value||"P";
   XLSX.writeFile(wb,`thollio_${datum}_${hieb}_${los}_${polter}.xlsx`);
 }
+
+function allesLoeschen(){
+  if(!confirm("Möchten Sie wirklich alle Daten löschen?")) return;
+  durchmesserListe = [];
+  window.durchmesserDurchschnitt = NaN;
+  localStorage.clear();
+  document.getElementById("holzForm").reset();
+  document.getElementById("durchmesserListe").textContent = "";
+  avgAnzeige.textContent = "Durchschnitt: -";
+  document.getElementById("anzahlContainer").style.display = "none";
+  document.getElementById("ergebnis").style.display = "none";
+  initMap();
+  dInput.focus();
+}
 </script>
 </body>
 </html>
+
 
 
