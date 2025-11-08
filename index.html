@@ -209,6 +209,7 @@ const dInput = document.getElementById("durchmesserEingabe");
 const avgAnzeige = document.getElementById("durchschnittAnzeige");
 const KEYS = ["datum","baumart","gueteklasse","polternummer","hiebnummer","losnummer","laenge","latitude","longitude","bemerkung"];
 
+/* 🌲 Beim Laden: gespeicherte Werte setzen + Standardwert für Durchmesser */
 window.addEventListener("load", () => {
   KEYS.forEach(k => {
     const val = localStorage.getItem("thollio_" + k);
@@ -217,8 +218,13 @@ window.addEventListener("load", () => {
       if (el) el.value = val;
     }
   });
+
+  // Letzten Durchmesserwert laden oder Standardwert 20 setzen
+  const lastD = localStorage.getItem("thollio_lastDurchmesser");
+  dInput.value = lastD ? lastD : 20;
+
   dInput.focus();
-  initMap(); // immer aktuellen Standort holen
+  initMap(); // Karte initialisieren
 });
 
 function initMap() {
@@ -259,12 +265,18 @@ function setCoords(lat, lon){
   localStorage.setItem("thollio_longitude", lon.toFixed(6));
 }
 
+/* Durchmesser-Eingabe + Speicherung des letzten Wertes */
 dInput.addEventListener("keydown", e=>{
   if(e.key==="Enter"){
     e.preventDefault();
     const v=parseFloat(dInput.value);
-    if(!isNaN(v)){durchmesserListe.push(v);aktualisiereDurchschnitt();dInput.value="";}
-    dInput.focus();
+    if(!isNaN(v)){
+      durchmesserListe.push(v);
+      aktualisiereDurchschnitt();
+      localStorage.setItem("thollio_lastDurchmesser", v); // letzten Wert speichern
+      dInput.value=v; // wieder anzeigen für evtl. Wiederholung
+      dInput.select();
+    }
   }
 });
 
@@ -311,23 +323,23 @@ function allesLoeschen() {
     document.getElementById("durchschnittAnzeige").textContent = "Durchschnitt: -";
     document.getElementById("ergebnis").style.display = "none";
     document.getElementById("anzahlContainer").style.display = "none";
+    dInput.value = 20;
     dInput.focus();
 
-    // Karte zurücksetzen und aktuellen Standort anzeigen
+    // Karte zurücksetzen
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
           const { latitude, longitude } = pos.coords;
           map.setView([latitude, longitude], 16);
           marker.setLatLng([latitude, longitude]);
-          marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
-            <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
+          marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}`).openPopup();
           setCoords(latitude, longitude);
         },
         () => {
           map.setView([51.1657, 10.4515], 7);
           marker.setLatLng([51.1657, 10.4515]);
-          marker.bindPopup(`<b>📍 Standard-Standort (Deutschland):</b><br>51.1657, 10.4515`).openPopup();
+          marker.bindPopup(`<b>📍 Standard-Standort (Deutschland)</b><br>51.1657, 10.4515`).openPopup();
           setCoords(51.1657, 10.4515);
         }
       );
@@ -380,3 +392,4 @@ function exportXLSX(){
 </script>
 </body>
 </html>
+
