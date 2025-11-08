@@ -112,9 +112,6 @@
 <h1>Thollio Holzmantelerfassung</h1>
 
 <form id="holzForm">
-  <label>Datum:
-    <input type="date" id="datum" required>
-  </label>
 
   <label>Baumart:
     <select id="baumart" required>
@@ -180,6 +177,7 @@
 
 <div class="ergebnis" id="ergebnis" style="display:none;">
   <h3>Ergebnis</h3>
+  <div id="datumAnzeige" style="margin-bottom:10px; font-weight:bold; color:#a5d6a7;"></div>
   <table id="ergebnisTabelle">
     <thead>
       <tr>
@@ -213,18 +211,15 @@ const KEYS = ["datum","baumart","gueteklasse","polternummer","hiebnummer","losnu
 window.addEventListener("load", () => {
   KEYS.forEach(k => {
     const val = localStorage.getItem("thollio_" + k);
-    if (val) {
-      const el = document.getElementById(k);
-      if (el) el.value = val;
-    }
+    const el = document.getElementById(k);
+    if (val && el) el.value = val;
   });
 
-  // Letzten Durchmesserwert laden oder Standardwert 20 setzen
   const lastD = localStorage.getItem("thollio_lastDurchmesser");
   dInput.value = lastD ? lastD : 20;
 
   dInput.focus();
-  initMap(); // Karte initialisieren
+  initMap();
 });
 
 function initMap() {
@@ -265,6 +260,12 @@ function setCoords(lat, lon){
   localStorage.setItem("thollio_longitude", lon.toFixed(6));
 }
 
+/* Hilfsfunktion für aktuelles Datum */
+function aktuellesDatumISO(){
+  const jetzt = new Date();
+  return jetzt.toISOString().split('T')[0];
+}
+
 /* Durchmesser-Eingabe + Speicherung des letzten Wertes */
 dInput.addEventListener("keydown", e=>{
   if(e.key==="Enter"){
@@ -273,8 +274,8 @@ dInput.addEventListener("keydown", e=>{
     if(!isNaN(v)){
       durchmesserListe.push(v);
       aktualisiereDurchschnitt();
-      localStorage.setItem("thollio_lastDurchmesser", v); // letzten Wert speichern
-      dInput.value=v; // wieder anzeigen für evtl. Wiederholung
+      localStorage.setItem("thollio_lastDurchmesser", v);
+      dInput.value=v;
       dInput.select();
     }
   }
@@ -298,12 +299,23 @@ function zeigeGesamtStueckzahl(){
 document.getElementById("holzForm").addEventListener("submit", e=>{
   e.preventDefault();
   const data={};
-  KEYS.forEach(k=>{const el=document.getElementById(k);data[k]=el?el.value:"";localStorage.setItem("thollio_"+k,data[k]);});
+  KEYS.forEach(k=>{
+    const el=document.getElementById(k);
+    if(k==="datum"){
+      data[k]=aktuellesDatumISO();
+    } else {
+      data[k]=el?el.value:"";
+    }
+    localStorage.setItem("thollio_"+k,data[k]);
+  });
+
   const laenge=parseFloat(data.laenge);
   const n=parseInt(document.getElementById("gesamtAnzahl").value);
   const d=window.durchmesserDurchschnitt;
   const einzelVol=Math.PI*Math.pow(d/200,2)*laenge;
   const gesVol=einzelVol*n;
+
+  document.getElementById("datumAnzeige").textContent = "📅 Datum: " + data.datum;
 
   const tbody=document.querySelector("#ergebnisTabelle tbody");
   tbody.innerHTML=`<tr><td>${d.toFixed(1)}</td><td>${n}</td><td>${einzelVol.toFixed(3)}</td><td>${gesVol.toFixed(3)}</td></tr>`;
@@ -317,7 +329,6 @@ function allesLoeschen() {
     localStorage.clear();
     durchmesserListe = [];
     window.durchmesserDurchschnitt = undefined;
-
     document.getElementById("holzForm").reset();
     document.getElementById("durchmesserListe").textContent = "";
     document.getElementById("durchschnittAnzeige").textContent = "Durchschnitt: -";
@@ -325,8 +336,6 @@ function allesLoeschen() {
     document.getElementById("anzahlContainer").style.display = "none";
     dInput.value = 20;
     dInput.focus();
-
-    // Karte zurücksetzen
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
@@ -353,10 +362,11 @@ function exportXLSX(){
   const lat=document.getElementById("latitude").value;
   const lon=document.getElementById("longitude").value;
   const mapsLink=`https://maps.google.com/?q=${lat},${lon}`;
+  const datum=aktuellesDatumISO();
 
   const ws_data=[
     ["Thollio Holzmantelerfassung"],
-    ["Datum",document.getElementById("datum").value],
+    ["Datum",datum],
     ["Baumart",document.getElementById("baumart").value],
     ["Güteklasse",document.getElementById("gueteklasse").value],
     ["Polternummer",document.getElementById("polternummer").value],
@@ -383,7 +393,6 @@ function exportXLSX(){
   const ws2=XLSX.utils.aoa_to_sheet(ws2_data);
   XLSX.utils.book_append_sheet(wb,ws2,"Durchmesserliste");
 
-  const datum=document.getElementById("datum").value;
   const hieb=document.getElementById("hiebnummer").value||"H";
   const los=document.getElementById("losnummer").value||"L";
   const polter=document.getElementById("polternummer").value||"P";
@@ -392,4 +401,3 @@ function exportXLSX(){
 </script>
 </body>
 </html>
-
