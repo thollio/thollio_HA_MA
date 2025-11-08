@@ -202,12 +202,12 @@
 
 <script>
 let durchmesserListe = [];
-let map, marker;
+let map, marker, watchId;
 const dInput = document.getElementById("durchmesserEingabe");
 const avgAnzeige = document.getElementById("durchschnittAnzeige");
 const KEYS = ["datum","baumart","gueteklasse","polternummer","hiebnummer","losnummer","laenge","latitude","longitude","bemerkung"];
 
-/* 🌲 Beim Laden: gespeicherte Werte setzen + Standardwert für Durchmesser */
+/* 🌲 Beim Laden */
 window.addEventListener("load", () => {
   KEYS.forEach(k => {
     const val = localStorage.getItem("thollio_" + k);
@@ -217,31 +217,24 @@ window.addEventListener("load", () => {
 
   const lastD = localStorage.getItem("thollio_lastDurchmesser");
   dInput.value = lastD ? lastD : 20;
-
   dInput.focus();
+
   initMap();
 });
 
+/* 🌍 Karte initialisieren und Standort fortlaufend aktualisieren */
 function initMap() {
   map = L.map('map').setView([51.1657, 10.4515], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18, attribution: '&copy; OpenStreetMap-Mitwirkende'
   }).addTo(map);
-
   marker = L.marker([51.1657, 10.4515]).addTo(map);
 
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 16);
-      marker.setLatLng([latitude, longitude]);
-      marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
-        <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
-      setCoords(latitude, longitude);
-    }, () => {
-      marker.bindPopup(`<b>📍 Standard-Standort (Deutschland):</b><br>51.1657, 10.4515`).openPopup();
-      setCoords(51.1657, 10.4515);
-    });
+    // Startet fortlaufende Positionsaktualisierung
+    watchId = navigator.geolocation.watchPosition(updatePosition, geoError, { enableHighAccuracy: true });
+  } else {
+    geoError();
   }
 
   map.on('click', e => {
@@ -253,6 +246,23 @@ function initMap() {
   });
 }
 
+/* 🔁 Standort aktualisieren */
+function updatePosition(pos){
+  const { latitude, longitude } = pos.coords;
+  map.setView([latitude, longitude], 16);
+  marker.setLatLng([latitude, longitude]);
+  marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>
+  <a href="https://maps.google.com/?q=${latitude},${longitude}" target="_blank" style="color:#90caf9;">In Google Maps öffnen</a>`).openPopup();
+  setCoords(latitude, longitude);
+}
+
+/* ❌ Fehlerbehandlung */
+function geoError(){
+  marker.bindPopup(`<b>📍 Standard-Standort (Deutschland):</b><br>51.1657, 10.4515`).openPopup();
+  setCoords(51.1657, 10.4515);
+}
+
+/* 📍 Koordinaten speichern */
 function setCoords(lat, lon){
   document.getElementById("latitude").value = lat.toFixed(6);
   document.getElementById("longitude").value = lon.toFixed(6);
@@ -260,13 +270,13 @@ function setCoords(lat, lon){
   localStorage.setItem("thollio_longitude", lon.toFixed(6));
 }
 
-/* Hilfsfunktion für aktuelles Datum */
+/* 📅 Hilfsfunktion für aktuelles Datum */
 function aktuellesDatumISO(){
   const jetzt = new Date();
   return jetzt.toISOString().split('T')[0];
 }
 
-/* Durchmesser-Eingabe + Speicherung des letzten Wertes */
+/* 🌲 Durchmesser-Eingabe */
 dInput.addEventListener("keydown", e=>{
   if(e.key==="Enter"){
     e.preventDefault();
@@ -296,16 +306,14 @@ function zeigeGesamtStueckzahl(){
   document.getElementById("gesamtAnzahl").focus();
 }
 
+/* 📏 Berechnen */
 document.getElementById("holzForm").addEventListener("submit", e=>{
   e.preventDefault();
   const data={};
   KEYS.forEach(k=>{
     const el=document.getElementById(k);
-    if(k==="datum"){
-      data[k]=aktuellesDatumISO();
-    } else {
-      data[k]=el?el.value:"";
-    }
+    if(k==="datum"){ data[k]=aktuellesDatumISO(); }
+    else { data[k]=el?el.value:""; }
     localStorage.setItem("thollio_"+k,data[k]);
   });
 
@@ -336,27 +344,19 @@ function allesLoeschen() {
     document.getElementById("anzahlContainer").style.display = "none";
     dInput.value = 20;
     dInput.focus();
+
+    // Standort erneut aktiv abfragen
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          const { latitude, longitude } = pos.coords;
-          map.setView([latitude, longitude], 16);
-          marker.setLatLng([latitude, longitude]);
-          marker.bindPopup(`<b>📍 Aktueller Standort:</b><br>${latitude.toFixed(5)}, ${longitude.toFixed(5)}`).openPopup();
-          setCoords(latitude, longitude);
-        },
-        () => {
-          map.setView([51.1657, 10.4515], 7);
-          marker.setLatLng([51.1657, 10.4515]);
-          marker.bindPopup(`<b>📍 Standard-Standort (Deutschland)</b><br>51.1657, 10.4515`).openPopup();
-          setCoords(51.1657, 10.4515);
-        }
-      );
+      navigator.geolocation.getCurrentPosition(updatePosition, geoError, { enableHighAccuracy: true });
+    } else {
+      geoError();
     }
-    alert("Alle Daten wurden gelöscht und die Karte wurde auf den aktuellen Standort zurückgesetzt.");
+
+    alert("Alle Daten wurden gelöscht und der Standort wurde aktualisiert.");
   }
 }
 
+/* 📤 Excel-Export */
 function exportXLSX(){
   const wb=XLSX.utils.book_new();
   const lat=document.getElementById("latitude").value;
